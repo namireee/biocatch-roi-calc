@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BioCatch ROI Calculator (IDR)</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121a32;
+      --panel-2: #0f162b;
+      --ink: #e9eefc;
+      --muted: #a9b3ce;
+      --accent: #6ea8ff;
+      --accent-2: #8bd3ff;
+      --ok: #34d399;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      background: radial-gradient(1200px 800px at 80% -20%, rgba(110,168,255,.15), transparent),
+                  radial-gradient(900px 700px at -10% 120%, rgba(139,211,255,.12), transparent),
+                  var(--bg);
+      color: var(--ink);
+    }
+    .container { max-width: 1080px; margin: 40px auto; padding: 0 20px; }
+    .header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+    .title { font-size: clamp(22px, 2.4vw, 32px); font-weight: 800; letter-spacing: .2px; }
+    .subtitle { color: var(--muted); font-size: 14px; }
+    .logo { width: 170px; height: auto; display: block; }
+    .logo svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 6px 14px rgba(0,0,0,.35)); }
+
+    .grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: linear-gradient(180deg, var(--panel), var(--panel-2)); border: 1px solid rgba(255,255,255,.06); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .card h2 { font-size: 16px; margin: 0 0 16px; letter-spacing: .2px; }
+    .card .body { padding: 20px; }
+
+    .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; align-items: start; }
+    @media (max-width: 720px) { .input-grid { grid-template-columns: 1fr; } }
+
+    .field { display: grid; grid-template-rows: 38px auto; }
+    label { font-size: 13px; color: var(--muted); align-self: end; }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04);
+      color: var(--ink);
+      outline: none;
+    }
+    input::placeholder { color: #7380a0; }
+    .mutedControl { background: rgba(255,255,255,.03) !important; filter: saturate(0.7); }
+
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; }
+    .btn { appearance: none; border: none; cursor: pointer; padding: 12px 16px; border-radius: 12px; font-weight: 700; background: linear-gradient(180deg, #3a6af5, #2d56c9); color: #fff; box-shadow: 0 6px 18px rgba(58,106,245,.35); }
+    .btn.secondary { background: transparent; border: 1px solid rgba(255,255,255,.12); color: var(--ink); }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    @media (max-width: 720px) { .kpi-grid { grid-template-columns: 1fr; } }
+    .kpi { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 14px; padding: 16px; }
+    .kpi .label { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+    .kpi .value { font-size: 20px; font-weight: 800; }
+    .kpi .delta { font-size: 12px; margin-top: 6px; }
+
+    .note { margin-top: 10px; font-size: 12px; color: var(--muted); background: rgba(255,255,255,.03); border: 1px dashed rgba(255,255,255,.1); padding: 10px 12px; border-radius: 12px; }
+    .footer { margin-top: 18px; font-size: 12px; color: var(--muted); }
+    .hl { color: var(--accent-2); font-weight: 700; }
+    .good { color: var(--ok); }
+    .bad { color: var(--bad); }
+    .pill { display:inline-block; padding:4px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.1); font-size:12px; color:var(--muted) }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <div class="title">BioCatch ROI Calculator <span class="pill">IDR</span></div>
+        <div class="subtitle">Estimate financial ROI from deploying Account Takeover & Scams Prevention (BioCatch) for a retail bank.</div>
+      </div>
+      <!-- Inline attached BioCatch logo -->
+      <div class="logo" aria-label="BioCatch logo">
+        <svg data-name="Layer 1" id="Layer_1" viewBox="0 0 1238 499" xmlns="http://www.w3.org/2000/svg">
+          <g>
+            <path d="M422.74,236.98c0-8.62-6.24-15.04-14.86-15.04h-29.16v30.26h29.16c8.62,0,14.86-6.42,14.86-15.22M378.72,171.13v28.24h25.31c7.89,0,13.75-6.05,13.75-14.12s-5.69-14.12-13.75-14.12h-25.31ZM447.86,238.63c0,22.01-17.79,37.23-39.98,37.23h-54.47v-128.39h50.62c21.64,0,39.06,14.67,39.06,36.13,0,11.01-4.58,19.62-12.11,25.68,10.28,5.87,16.88,15.96,16.88,29.35" fill="#0076bb"></path>
+            <path d="M457.77,184.16h23.66v91.7h-23.66v-91.7ZM455.02,158.66c0-7.89,6.6-14.67,14.49-14.67s14.67,6.79,14.67,14.67-6.6,14.49-14.67,14.49-14.49-6.6-14.49-14.49" fill="#0076bb"></path>
+            <path d="M562.54,230.01c0-14.85-10.82-25.31-24.94-25.31s-24.76,10.46-24.76,25.31,10.82,25.31,24.76,25.31,24.94-10.46,24.94-25.31M489.18,230.01c0-27.33,21.46-48.42,48.42-48.42s48.6,21.09,48.6,48.42-21.64,48.42-48.6,48.42-48.42-21.09-48.42-48.42" fill="#0076bb"></path>
+            <path d="M592.62,211.67c0-37.6,27.88-66.76,66.76-66.76,23.48,0,44.2,11.92,55.2,30.26l-21.82,12.66c-6.24-11.37-18.71-18.34-33.38-18.34-25.13,0-41.63,17.42-41.63,42.19s16.51,42,41.63,42c14.67,0,27.33-6.97,33.38-18.16l21.82,12.66c-10.82,18.34-31.55,30.26-55.2,30.26-38.88,0-66.76-29.35-66.76-66.76" fill="#172952"></path>
+            <path d="M793.82,230.01c0-15.41-10.82-25.86-25.49-25.86s-25.31,10.46-25.31,25.86,10.82,25.86,25.31,25.86,25.49-10.46,25.49-25.86M817.49,184.16v91.7h-23.66v-10.82c-6.6,8.25-16.51,13.39-29.89,13.39-24.39,0-44.57-21.09-44.57-48.42s20.18-48.42,44.57-48.42c13.39,0,23.29,5.14,29.89,13.39v-10.82h23.66Z" fill="#172952"></path>
+            <path d="M865.17,206.9v38.15c0,9.9,7.15,10.09,20.73,9.35v21.46c-33.2,3.67-44.39-6.05-44.39-30.81v-38.15h-15.96v-22.74h15.96v-18.53l23.66-7.15v25.68h20.73v22.74h-20.73Z" fill="#172952"></path>
+            <path d="M889.57,230.01c0-27.33,20.54-48.42,48.42-48.42,17.97,0,33.56,9.54,41.08,23.66l-20.36,11.92c-3.67-7.52-11.56-12.29-20.91-12.29-14.12,0-24.57,10.45-24.57,25.13s10.45,24.94,24.57,24.94c9.54,0,17.43-4.58,21.09-12.1l20.54,11.74c-7.88,14.3-23.48,23.84-41.45,23.84-27.88,0-48.42-21.09-48.42-48.42" fill="#172952"></path>
+            <path d="M1072.06,219.55v56.31h-23.66v-53.37c0-12.47-7.52-18.89-18.16-18.89-11.56,0-20.17,6.78-20.17,22.74v49.52h-23.66v-128.39h23.66v46.95c5.5-8.25,15.04-12.84,27.33-12.84,19.44,0,34.66,13.57,34.66,37.96" fill="#172952"></path>
+            <path d="M147.26,218.56c-4.1,0-7.43-3.34-7.43-7.44s3.33-7.43,7.43-7.43,7.43,3.34,7.43,7.43-3.33,7.44-7.43,7.44M147.26,195.61c-8.56,0-15.51,6.96-15.51,15.51s6.95,15.51,15.51,15.51,15.5-6.96,15.5-15.51-6.96-15.51-15.5-15.51" fill="#172952"></path>
+            <path d="M185.43,179.75c-4.1,0-7.43-3.34-7.43-7.44s3.33-7.43,7.43-7.43,7.43,3.34,7.43,7.43-3.33,7.44-7.43,7.44M185.43,156.8c-8.56,0-15.51,6.96-15.51,15.51s6.95,15.51,15.51,15.51,15.5-6.96,15.5-15.51-6.96-15.51-15.5-15.51" fill="#0076bb"></path>
+            <path d="M146.54,141.15c-4.1,0-7.43-3.34-7.43-7.44s3.33-7.43,7.43-7.43,7.43,3.34,7.43,7.43-3.33,7.44-7.43,7.44M146.54,118.21c-8.56,0-15.51,6.96-15.51,15.51s6.95,15.51,15.51,15.51,15.5-6.96,15.5-15.51-6.96-15.51-15.5-15.51" fill="#172952"></path>
+            <path d="M185.43,257.37c-4.1,0-7.43-3.34-7.43-7.44s3.33-7.43,7.43-7.43,7.43,3.34,7.43,7.43-3.33,7.44-7.43,7.44M185.43,234.42c-8.56,0-15.51,6.96-15.51,15.51s6.95,15.51,15.51,15.51,15.5-6.96,15.5-15.51-6.96-15.51-15.5-15.51" fill="#172952"></path>
+            <path d="M148.26,294.53c-4.1,0-7.43-3.34-7.43-7.44s3.33-7.43,7.43-7.43,7.43,3.34,7.43,7.43-3.33,7.44-7.43,7.44M148.26,271.59c-8.56,0-15.51,6.96-15.51,15.51s6.95,15.51,15.51,15.51,15.5-6.96,15.5-15.51-6.96-15.51-15.5-15.51" fill="#0076bb"></path>
+            <path d="M301.86,218.56c-4.1,0-7.43-3.34-7.43-7.44s3.33-7.43,7.43-7.43,7.43,3.34,7.43,7.43-3.33,7.44-7.43,7.44M301.86,195.61c-8.56,0-15.51,6.96-15.51,15.51s6.95,15.51,15.51,15.51,15.5-6.96,15.5-15.51-6.96-15.51-15.5-15.51" fill="#172952"></path>
+            <path d="M301.86,141.15c-4.1,0-7.43-3.34-7.43-7.44s3.33-7.43,7.43-7.43,7.43,3.34,7.43,7.43-3.33,7.44-7.43,7.44M301.86,118.21c-8.56,0-15.51,6.96-15.51,15.51s6.95,15.51,15.51,15.51,15.5-6.96,15.5-15.51-6.96-15.51-15.5-15.51" fill="#0076bb"></path>
+            <path d="M301.86,293.49c-4.1,0-7.43-3.34-7.43-7.44s3.33-7.43,7.43-7.43,7.43,3.34,7.43,7.43-3.33,7.44-7.43,7.44M301.86,270.54c-8.56,0-15.51,6.96-15.51,15.51s6.95,15.51,15.51,15.51,15.5-6.96,15.5-15.51-6.96-15.51-15.5-15.51" fill="#172952"></path>
+            <path d="M278.83,253.56c.05-.2.13-.4.17-.61.2-1.01.3-2.05.29-3.12,0-.5-.04-.99-.09-1.47-.01-.13-.03-.27-.05-.4-.04-.32-.09-.64-.15-.95-.03-.18-.07-.35-.11-.53-.06-.27-.14-.53-.21-.79-.12-.41-.25-.82-.4-1.21-.05-.12-.09-.24-.14-.36-.04-.11-.08-.22-.13-.33-.08-.18-.18-.36-.27-.54-.03-.06-.06-.13-.1-.2-.77-1.55-1.78-2.95-3-4.15-.71-.69-1.48-1.32-2.31-1.87-2.48-1.64-5.47-2.59-8.67-2.56h0c-4.38-.54-8.01-2.11-12.35-6.13l-7.14-7.1c-2.58-2.57-3.77-6.1-3.7-9.74v-.14c0-.1,0-.2,0-.3h0c.53-4.37,2.1-8.01,6.12-12.35l7.1-7.14c2.56-2.58,6.1-3.77,9.74-3.7.13,0,.26,0,.39,0,.3,0,.59-.03.89-.06.12,0,.24,0,.36-.02.3-.03.59-.07.88-.11.15-.02.29-.04.44-.07.29-.05.58-.11.86-.17.11-.03.21-.06.32-.08.57-.15,1.12-.33,1.66-.53.1-.04.2-.07.3-.11.27-.11.52-.23.78-.35.13-.06.26-.13.39-.2.25-.13.5-.26.74-.4.1-.06.21-.13.31-.19,1.08-.66,2.08-1.44,2.96-2.34.08-.08.15-.18.22-.26.35-.37.68-.76.99-1.17.15-.19.29-.38.42-.57.3-.43.59-.88.85-1.34.08-.15.17-.31.25-.47.2-.38.38-.76.55-1.15.05-.13.09-.27.14-.39.08-.2.15-.4.21-.6.19-.57.36-1.15.48-1.75.01-.05.03-.1.04-.15.2-1.01.3-2.05.29-3.11h0v-.02s0-.05,0-.07c0-.44-.03-.88-.08-1.31-.02-.17-.04-.34-.06-.52-.04-.29-.08-.57-.14-.86-.04-.19-.07-.38-.11-.56-.07-.29-.15-.58-.23-.87-.09-.3-.19-.6-.29-.89-.08-.22-.16-.45-.25-.67-.03-.08-.06-.18-.1-.26-.06-.14-.14-.28-.2-.42-.08-.16-.16-.33-.24-.49-.12-.24-.25-.47-.38-.7-.06-.1-.13-.2-.19-.3-.67-1.09-1.45-2.1-2.36-2.98-.71-.69-1.48-1.32-2.31-1.87-2.48-1.65-5.47-2.6-8.67-2.57h0c-4.38-.54-8.01-2.11-12.35-6.13l-7.14-7.1c-2.58-2.57-3.77-6.1-3.7-9.74,0-.13,0-.26,0-.39-.04-4.27-1.81-8.12-4.64-10.9-2.12-2.08-4.84-3.56-7.86-4.15-1.01-.2-2.05-.3-3.11-.29-3.2.03-6.17,1.03-8.62,2.73-.82.56-1.58,1.2-2.27,1.91-1.39,1.41-2.51,3.09-3.27,4.95-.77,1.86-1.18,3.9-1.16,6.03.02,2.13.47,4.16,1.27,6.01.8,1.84,1.95,3.5,3.36,4.89.71.69,1.48,1.32,2.31,1.87,2.48,1.64,5.47,2.6,8.67,2.56h0c4.37.54,8.01,2.11,12.35,6.13l7.14,7.1c2.58,2.57,3.77,6.1,3.7,9.74v.1c0,.1,0,.2,0,.31h0c-.53,4.37-2.1,8.01-6.12,12.35l-7.1,7.14c-2.56,2.58-6.1,3.77-9.74,3.7-.13,0-.26,0-.39,0-4.27.04-8.12,1.81-10.89,4.64-.28.28-.52.6-.78.91-.09.11-.19.22-.28.33-.25.31-.49.64-.71.97-.13.2-.25.4-.37.6-.29.48-.56.97-.8,1.48-.11.23-.23.46-.33.7-.03.08-.06.16-.09.24-.11.28-.21.57-.3.86-.14.44-.26.88-.37,1.34-.03.15-.09.28-.12.43-.2,1.01-.3,2.05-.29,3.11v.05c0,.06,0,.12,0,.18.01.38.03.77.07,1.14.02.23.05.45.08.67.03.2.06.41.1.6.05.27.1.55.16.81.01.05.03.09.04.14.21.85.47,1.67.81,2.46.8,1.84,1.95,3.5,3.37,4.89.71.69,1.48,1.32,2.31,1.87,2.48,1.64,5.47,2.59,8.67,2.56h0c4.37.54,8.01,2.11,12.35,6.13l7.14,7.1c2.58,2.57,3.77,6.1,3.7,9.74,0,.12,0,.24,0,.37,0,.02,0,.04,0,.06h0c-.53,4.37-2.1,8-6.12,12.35l-7.1,7.14c-2.57,2.58-6.1,3.77-9.74,3.7-.13,0-.26,0-.39,0-4.27.04-8.12,1.81-10.89,4.64-2.08,2.12-3.56,4.84-4.15,7.86-.2,1.01-.3,2.05-.29,3.11.03,3.2,1.03,6.17,2.73,8.62.57.82,1.2,1.58,1.91,2.27,1.41,1.39,3.09,2.51,4.95,3.27s3.9,1.18,6.03,1.16c2.13-.02,4.16-.47,6.01-1.27,1.84-.8,3.5-1.95,4.89-3.37.69-.71,1.32-1.48,1.87-2.31,1.65-2.48,2.6-5.47,2.57-8.67h0c.53-4.37,2.1-8.01,6.12-12.35l7.1-7.14c2.56-2.58,6.1-3.77,9.74-3.7.13,0,.26,0,.39,0,4.26-.04,8.12-1.81,10.89-4.64.29-.3.55-.63.81-.96.07-.09.15-.17.22-.26.26-.33.51-.67.75-1.02.11-.15.2-.31.3-.47.34-.55.65-1.12.92-1.71.09-.19.19-.37.27-.57.03-.06.04-.13.07-.19.12-.32.24-.64.34-.96.12-.36.21-.73.3-1.11" fill="#172952"></path>
+          </g>
+          <g>
+            <path d="M368.74,382.46c-4.48,0-8.32-1.06-11.51-3.19-3.2-2.12-5.43-5.05-6.69-8.78l4.2-2.45c.89,3.03,2.52,5.4,4.9,7.1,2.38,1.7,5.44,2.56,9.17,2.56s6.47-.81,8.5-2.42,3.04-3.75,3.04-6.41-.93-4.5-2.8-5.81c-1.87-1.31-4.95-2.66-9.24-4.06-5.09-1.68-8.45-3.03-10.08-4.06-3.73-2.24-5.6-5.48-5.6-9.73s1.45-7.43,4.34-9.83c2.89-2.4,6.46-3.61,10.71-3.61,3.83,0,7.14.99,9.94,2.97,2.8,1.98,4.88,4.52,6.23,7.6l-4.13,2.31c-2.24-5.41-6.25-8.12-12.04-8.12-3.03,0-5.48.75-7.35,2.24-1.87,1.49-2.8,3.57-2.8,6.23,0,2.43.84,4.25,2.52,5.46,1.68,1.21,4.46,2.45,8.33,3.71,1.77.61,3.04,1.04,3.81,1.29.77.26,1.89.68,3.36,1.26,1.47.58,2.55,1.1,3.25,1.54.7.44,1.55,1.05,2.55,1.82,1,.77,1.73,1.54,2.17,2.31.44.77.84,1.7,1.19,2.8.35,1.1.52,2.28.52,3.54,0,4.15-1.52,7.48-4.55,9.97-3.03,2.5-7.02,3.75-11.97,3.75Z" fill="#172952"></path>
+            <path d="M410.46,351.1h-10.08v21.21c0,1.91.37,3.28,1.12,4.09.75.82,1.87,1.24,3.36,1.26,1.49.02,3.36-.01,5.6-.11v4.06c-4.9.75-8.58.4-11.03-1.05-2.45-1.45-3.67-4.2-3.67-8.26v-21.21h-7.35v-4.48h7.35v-8.4l4.62-1.4v9.8h10.08v4.48Z" fill="#172952"></path>
+            <path d="M446.16,346.62h4.62v35h-4.62v-6.86c-3.22,5.13-7.93,7.7-14.14,7.7-4.99,0-9.25-1.77-12.78-5.32-3.52-3.54-5.29-7.88-5.29-13.02s1.76-9.47,5.29-13.02c3.52-3.55,7.78-5.32,12.78-5.32,6.21,0,10.92,2.57,14.14,7.7v-6.86ZM422.57,373.96c2.66,2.68,5.93,4.02,9.8,4.02s7.14-1.34,9.8-4.02c2.66-2.68,3.99-5.96,3.99-9.83s-1.33-7.15-3.99-9.83c-2.66-2.68-5.93-4.02-9.8-4.02s-7.14,1.34-9.8,4.02c-2.66,2.68-3.99,5.96-3.99,9.83s1.33,7.15,3.99,9.83Z" fill="#172952"></path>
+            <path d="M485.78,346.62h4.9l-14.98,38.22c-1.35,3.45-3.28,6.17-5.77,8.16-2.5,1.98-5.28,2.86-8.36,2.62v-4.34c4.19.47,7.38-1.96,9.57-7.29l.89-2.26-15.64-35.11h4.9l13.1,29.08,11.4-29.08Z" fill="#172952"></path>
+            <path d="M529.88,382.46c-4.48,0-8.32-1.06-11.51-3.19-3.2-2.12-5.43-5.05-6.69-8.78l4.2-2.45c.89,3.03,2.52,5.4,4.9,7.1,2.38,1.7,5.44,2.56,9.17,2.56s6.47-.81,8.5-2.42,3.04-3.75,3.04-6.41-.93-4.5-2.8-5.81c-1.87-1.31-4.95-2.66-9.24-4.06-5.09-1.68-8.45-3.03-10.08-4.06-3.73-2.24-5.6-5.48-5.6-9.73s1.45-7.43,4.34-9.83c2.89-2.4,6.46-3.61,10.71-3.61,3.83,0,7.14.99,9.94,2.97,2.8,1.98,4.88,4.52,6.23,7.6l-4.13,2.31c-2.24-5.41-6.25-8.12-12.04-8.12-3.03,0-5.48.75-7.35,2.24-1.87,1.49-2.8,3.57-2.8,6.23,0,2.43.84,4.25,2.52,5.46,1.68,1.21,4.46,2.45,8.33,3.71,1.77.61,3.04,1.04,3.81,1.29.77.26,1.89.68,3.36,1.26,1.47.58,2.55,1.1,3.25,1.54.7.44,1.55,1.05,2.55,1.82,1,.77,1.73,1.54,2.17,2.31.44.77.84,1.7,1.19,2.8.35,1.1.52,2.28.52,3.54,0,4.15-1.52,7.48-4.55,9.97-3.03,2.5-7.02,3.75-11.97,3.75Z" fill="#172952"></path>
+            <path d="M584.9,346.62h4.62v35h-4.62v-6.86c-3.22,5.13-7.93,7.7-14.14,7.7-4.99,0-9.25-1.77-12.78-5.32-3.52-3.54-5.29-7.88-5.29-13.02s1.76-9.47,5.29-13.02c3.52-3.55,7.78-5.32,12.78-5.32,6.21,0,10.92,2.57,14.14,7.7v-6.86ZM561.31,373.96c2.66,2.68,5.93,4.02,9.8,4.02s7.14-1.34,9.8-4.02c2.66-2.68,3.99-5.96,3.99-9.83s-1.33-7.15-3.99-9.83c-2.66-2.68-5.93-4.02-9.8-4.02s-7.14,1.34-9.8,4.02c-2.66,2.68-3.99,5.96-3.99,9.83s1.33,7.15,3.99,9.83Z" fill="#172952"></path>
+            <path d="M616.82,336.26c-3.41-.28-5.94.3-7.6,1.75s-2.48,3.85-2.48,7.21v1.4h10.08v4.48h-10.08v30.52h-4.62v-30.52h-5.95v-4.48h5.95v-1.4c0-4.57,1.27-8.04,3.81-10.4,2.54-2.36,6.17-3.37,10.89-3.04v4.48Z" fill="#172952"></path>
+            <path d="M635.79,345.78c5.18,0,9.37,1.83,12.56,5.5,3.2,3.66,4.79,7.99,4.79,12.99,0,.51-.05,1.24-.14,2.17h-30.73c.47,3.55,1.97,6.36,4.52,8.43,2.54,2.08,5.68,3.11,9.42,3.11,2.66,0,4.96-.55,6.89-1.64,1.94-1.1,3.4-2.53,4.38-4.3l4.06,2.38c-1.54,2.47-3.64,4.43-6.3,5.88-2.66,1.45-5.69,2.17-9.1,2.17-5.51,0-9.99-1.73-13.44-5.18-3.45-3.45-5.18-7.84-5.18-13.16s1.7-9.59,5.11-13.09c3.41-3.5,7.79-5.25,13.16-5.25ZM635.79,350.26c-3.64,0-6.69,1.08-9.14,3.25-2.45,2.17-3.91,4.98-4.38,8.43h26.11c-.47-3.69-1.89-6.56-4.27-8.61-2.38-2.05-5.16-3.08-8.33-3.08Z" fill="#172952"></path>
+            <path d="M663.58,381.2c-.75.75-1.66,1.12-2.73,1.12s-1.98-.37-2.73-1.12c-.75-.75-1.12-1.66-1.12-2.73s.37-1.98,1.12-2.73,1.66-1.12,2.73-1.12,1.98.37,2.73,1.12c.75.75,1.12,1.66,1.12,2.73s-.37,1.98-1.12,2.73Z" fill="#172952"></path>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT: Inputs -->
+      <div class="card">
+        <div class="body">
+          <h2>Inputs</h2>
+          <div class="input-grid">
+            <div class="field">
+              <label>Subscription cost per active customer (IDR / user / year)</label>
+              <input type="text" id="subscriptionCostPerUser" placeholder="e.g., 2,000" />
+            </div>
+            <div class="field">
+              <label>Number of active customers</label>
+              <input type="text" id="activeCustomers" placeholder="e.g., 5,000,000" />
+            </div>
+
+            <div class="field">
+              <label>Operational manhours per fraud/scam case (hrs)</label>
+              <input type="text" id="opsHoursPerCase" placeholder="e.g., 0.5" />
+            </div>
+            <div class="field">
+              <label>Operational cost per hour (IDR/hr)</label>
+              <input type="text" id="opsCostPerHour" placeholder="e.g., 75,000" />
+            </div>
+
+            <div class="field">
+              <label>Customer service manhours per case (hrs)</label>
+              <input type="text" id="csHoursPerCase" placeholder="e.g., 1" />
+            </div>
+            <div class="field">
+              <label>Customer service cost per hour (IDR/hr)</label>
+              <input type="text" id="csCostPerHour" placeholder="e.g., 50,000" />
+            </div>
+
+            <div class="field">
+              <label>Total scam cases (annual)</label>
+              <input type="text" id="totalScamCases" placeholder="e.g., 50,000" />
+            </div>
+            <div class="field">
+              <label>Detection rate (%)</label>
+              <input type="text" id="detectionRate" class="mutedControl" placeholder="e.g., 60" />
+            </div>
+
+            <div class="field">
+              <label>Number of active customers churned due to decreased trust (annual)</label>
+              <input type="text" id="churnedCustomers" placeholder="auto: 60% of total cases if blank" />
+            </div>
+            <div class="field">
+              <label>Number of potential customers lost due to decreased trust (annual)</label>
+              <input type="text" id="lostProspects" placeholder="auto: 40% of total cases if blank" />
+            </div>
+
+            <div class="field">
+              <label>Average value per customer (IDR / year)</label>
+              <input type="text" id="avgValuePerCustomer" placeholder="e.g., 300,000" />
+            </div>
+          </div>
+
+          <div class="note">
+            <strong>Defaults:</strong> If <em>Churned</em> or <em>Lost prospects</em> are blank, they default to <span class="hl">60%</span> and <span class="hl">40%</span> of <em>Total scam cases</em> respectively. <br/>
+            Detection rate determines cases prevented (Detection × Total cases). This refers to the BioCatch's estimated detection rate.
+          </div>
+
+          <div class="actions">
+            <button class="btn" id="calcBtn" type="button">Calculate ROI</button>
+            <button class="btn secondary" id="resetBtn" type="button" title="Clear all fields">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Outputs -->
+      <div class="card">
+        <div class="body">
+          <h2>Results</h2>
+
+          <div class="kpi-grid">
+            <div class="kpi">
+              <div class="label">ROI (IDR)</div>
+              <div class="value" id="roiIdr">–</div>
+              <div class="delta" id="roiIdrBreakdown"></div>
+            </div>
+            <div class="kpi">
+              <div class="label">ROI (%)</div>
+              <div class="value" id="roiPercent">–</div>
+              <div class="delta">Formula: ROI / (Per-user subscription × Active customers)</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Payback Signal</div>
+              <div class="value" id="payback">–</div>
+              <div class="delta" id="paybackNote"></div>
+            </div>
+          </div>
+
+          <div class="note" id="explain">
+            Enter inputs and click <strong>Calculate ROI</strong>.
+          </div>
+
+          <div class="footer">
+            <strong>Benefit components</strong>: (1) Retention = churned × avg value; (2) Acquisition = lost prospects × avg value; (3) OpEx savings = (cases prevented × 50%) × [(ops hrs × ops cost) + (CS hrs × CS cost)]. <br/>
+            <strong>Costs</strong>: total subscription cost = per-user subscription × active customers. <br/>
+            <strong>ROI (IDR)</strong> = Benefits − Costs. <br/>
+            <strong>ROI (%)</strong> = ROI / (Per-user subscription × Active customers). (May exceed 100% when benefits greatly exceed costs.)
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const fmtIDR = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+    const $ = (id) => document.getElementById(id);
+
+    function keepAllowed(str){
+      if (str == null) return '';
+      const allowed = '0123456789.,-';
+      let out = '';
+      for (const ch of String(str)) { if (allowed.indexOf(ch) !== -1) out += ch; }
+      return out;
+    }
+    function parseNum(str){
+      const s = keepAllowed(str);
+      if (s.indexOf('.') !== -1 && s.indexOf(',') !== -1) {
+        const noCommas = s.split(',').join('');
+        const n = Number(noCommas);
+        return isNaN(n) ? 0 : n;
+      }
+      if (s.indexOf(',') !== -1) {
+        const n = Number(s.split(',').join(''));
+        return isNaN(n) ? 0 : n;
+      }
+      const n = Number(s);
+      return isNaN(n) ? 0 : n;
+    }
+    function valNum(id){ return parseNum($(id).value); }
+
+    function formatWithCommas(val){
+      if (val === '' || val === null || val === undefined) return '';
+      const num = parseNum(val);
+      if (isNaN(num)) return '';
+      let str = String(num);
+      let sign = '';
+      if (str[0] === '-') { sign = '-'; str = str.slice(1); }
+      let parts = str.split('.');
+      let intPart = parts[0];
+      const dec = parts.length > 1 ? '.' + parts[1] : '';
+      let res = '';
+      while (intPart.length > 3) {
+        res = ',' + intPart.slice(-3) + res;
+        intPart = intPart.slice(0, -3);
+      }
+      res = intPart + res;
+      return sign + res + dec;
+    }
+    function attachCommaFormatting(ids){
+      ids.forEach(id => {
+        const el = $(id);
+        if (!el) return;
+        el.addEventListener('blur', () => { el.value = formatWithCommas(el.value); });
+      });
+    }
+
+    function calc(){
+      const perUserSub = valNum('subscriptionCostPerUser');
+      const activeCustomers = valNum('activeCustomers');
+
+      const opsHours = valNum('opsHoursPerCase');
+      const opsCostHr = valNum('opsCostPerHour');
+      const csHours = valNum('csHoursPerCase');
+      const csCostHr = valNum('csCostPerHour');
+
+      const totalScamCases = valNum('totalScamCases');
+      const detectionRate = Math.min(100, Math.max(0, valNum('detectionRate')));
+
+      const churnedFilled = $("churnedCustomers").value.trim() !== '';
+      const lostFilled = $("lostProspects").value.trim() !== '';
+      const churned = churnedFilled ? valNum('churnedCustomers') : 0.60 * totalScamCases;
+      const lostProspects = lostFilled ? valNum('lostProspects') : 0.40 * totalScamCases;
+
+      const avgValue = valNum('avgValuePerCustomer');
+
+      const casesPrevented = (detectionRate / 100) * totalScamCases;
+
+      const retentionBenefit = churned * avgValue;
+      const acquisitionBenefit = lostProspects * avgValue;
+      const perCaseSavings = (opsHours * opsCostHr) + (csHours * csCostHr);
+      const opexSavings = (casesPrevented * 0.5) * perCaseSavings; // assume 50% report rate
+
+      const totalBenefits = retentionBenefit + acquisitionBenefit + opexSavings;
+      const totalCosts = perUserSub * activeCustomers;
+      const roiIdr = totalBenefits - totalCosts;
+
+      const denom = perUserSub * activeCustomers;
+      const roiPct = denom > 0 ? (roiIdr / denom) * 100 : null;
+
+      $("roiIdr").textContent = fmtIDR.format(roiIdr);
+      $("roiIdrBreakdown").innerHTML = `Benefits ${fmtIDR.format(totalBenefits)} − Cost ${fmtIDR.format(totalCosts)} (Per-user ${fmtIDR.format(perUserSub)} × ${activeCustomers.toLocaleString('en-US')})`;
+
+      if (roiPct === null) { $("roiPercent").textContent = '–'; }
+      else { $("roiPercent").textContent = (roiPct).toFixed(2) + '%'; }
+
+      const paybackEl = $("payback");
+      const paybackNote = $("paybackNote");
+      if (totalBenefits > 0) {
+        const months = 12 * (totalCosts / totalBenefits); // payback months
+        if (roiIdr >= 0) { paybackEl.textContent = 'Positive'; paybackEl.classList.add('good'); paybackEl.classList.remove('bad'); }
+        else { paybackEl.textContent = 'Negative'; paybackEl.classList.add('bad'); paybackEl.classList.remove('good'); }
+        paybackNote.textContent = `Estimated payback ≈ ${months.toFixed(1)} months.`;
+      } else {
+        paybackEl.textContent = '–';
+        paybackEl.classList.remove('good','bad');
+        paybackNote.textContent = 'Enter benefits to estimate payback.';
+      }
+
+      $("explain").innerHTML = `
+        <strong>Computed with:</strong><br/>
+        Cases prevented = ${formatWithCommas(totalScamCases)} × ${detectionRate}% = <strong>${formatWithCommas(casesPrevented)}</strong><br/>
+        Retention benefit = ${formatWithCommas(churned)} × IDR ${formatWithCommas(avgValue)} = <strong>${fmtIDR.format(retentionBenefit)}</strong><br/>
+        Acquisition benefit = ${formatWithCommas(lostProspects)} × IDR ${formatWithCommas(avgValue)} = <strong>${fmtIDR.format(acquisitionBenefit)}</strong><br/>
+        OpEx savings = (${formatWithCommas(casesPrevented)} × 50%) × (${opsHours.toFixed(2)}h×${fmtIDR.format(opsCostHr)} + ${csHours.toFixed(2)}h×${fmtIDR.format(csCostHr)}) = <strong>${fmtIDR.format(opexSavings)}</strong><br/>
+        Total subscription cost = ${fmtIDR.format(perUserSub)} × ${formatWithCommas(activeCustomers)} = <strong>${fmtIDR.format(totalCosts)}</strong>
+      `;
+    }
+
+    function reset(){
+      ['subscriptionCostPerUser','activeCustomers','opsHoursPerCase','opsCostPerHour','csHoursPerCase','csCostPerHour','totalScamCases','detectionRate','churnedCustomers','lostProspects','avgValuePerCustomer']
+        .forEach(id=> { $(id).value = ''; });
+      $("roiIdr").textContent = '–';
+      $("roiIdrBreakdown").textContent = '';
+      $("roiPercent").textContent = '–';
+      $("payback").textContent = '–';
+      $("paybackNote").textContent = '';
+      $("explain").innerHTML = 'Enter inputs and click <strong>Calculate ROI</strong>.';
+    }
+
+    function preload(){
+      $("subscriptionCostPerUser").value = '2,000';
+      $("activeCustomers").value = '5,000,000';
+      $("opsHoursPerCase").value = '0.5';
+      $("opsCostPerHour").value = '75,000';
+      $("csHoursPerCase").value = '1';
+      $("csCostPerHour").value = '50,000';
+      $("totalScamCases").value = '50,000';
+      $("avgValuePerCustomer").value = '300,000';
+      $("detectionRate").value = '60';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      attachCommaFormatting(['subscriptionCostPerUser','activeCustomers','opsHoursPerCase','opsCostPerHour','csHoursPerCase','csCostPerHour','totalScamCases','detectionRate','churnedCustomers','lostProspects','avgValuePerCustomer']);
+      preload();
+      $("calcBtn").addEventListener('click', calc);
+      $("resetBtn").addEventListener('click', reset);
+    });
+  </script>
+</body>
+</html>
